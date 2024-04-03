@@ -26,11 +26,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         outputs = self.model.generate(input_ids)
         response = self.tokenizer.decode(outputs[0]).replace('<pad>', '').replace('</s>', '')
 
+
         await self.send(text_data=json.dumps([
-            {
-                "type": True,
-                "value": f"{message}"
-            },
             {
                 "type": False,
                 "value": response
