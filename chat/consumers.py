@@ -2,7 +2,7 @@
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from transformers import MambaConfig, MambaForCausalLM, AutoTokenizer
 
 from transformers import ViTImageProcessor, ViTForImageClassification
 
@@ -13,8 +13,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-base", legacy=True)
-        self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-base")
+        self.tokenizer = AutoTokenizer.from_pretrained("state-spaces/mamba-130m-hf")
+        self.model = MambaForCausalLM.from_pretrained("state-spaces/mamba-130m-hf")
 
         self.processor = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224')
         self.vision_model = ViTForImageClassification.from_pretrained('vit-snack')
@@ -48,8 +48,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message = text_data_json["message"]
             input_ids = self.tokenizer(message, return_tensors="pt").input_ids
 
-            outputs = self.model.generate(input_ids)
-            response = self.tokenizer.decode(outputs[0]).replace('<pad>', '').replace('</s>', '')
+            outputs = self.model.generate(input_ids, max_new_tokens=10)
+            response = self.tokenizer.batch_decode(outputs)[0].split("\n\n")[-1]
 
 
             await self.send(text_data=json.dumps([
